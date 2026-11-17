@@ -54,7 +54,7 @@ dsh plugin --profile desktop add git+https://github.com/MCII-DeepSeek/mcii-jieji
 lib/index.js    入口：每次 apply 用 ?v=<size-mtime-boot> 重新 import impl.js，改完代码触发 patch reload 就生效
 lib/impl.js     实现：段落遮蔽 / 注入 / 上下文清空 / HTTP 路由 / 状态机
 lib/client.js   界面：开关、指标、遮蔽段落列表、清理按钮（图标全是内联 SVG，无 emoji）
-prompts/        armor.md（核心）、prefix.md、seal.md
+prompts/        armor.md（核心 8900 字）、prefix.md、seal.md —— 运行时拼成单段
 icon.svg        插件图标（盾 + 锁孔，64 网格）
 cordis.patch.yml  bundle patch：把插件行和「解甲模式」预设插进 profile
 test-impl.mjs   本地无宿主自测：四种状态下的注入行为
