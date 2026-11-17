@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>armor-one real component</title>
+<style>
+  html,body{margin:0;height:100%;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  body.dark{background:#0d0e16;color:#e6e6ea}
+  body.light{background:#eef0f6;color:#1b1d26}
+  .frame{width:420px;margin:24px;border-radius:14px;overflow:hidden;border:1px solid rgba(128,128,128,.22);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  body.dark .frame{background:#171822}
+  body.light .frame{background:#fff}
+  .bar{display:flex;align-items:center;gap:7px;padding:10px 13px;border-bottom:1px solid rgba(128,128,128,.16);font-size:11.5px;opacity:.6}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .host{min-height:470px;display:flex}
+  .host > *{flex:1 1 auto}
+</style></head>
+<body class="dark">
+<div class="frame"><div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span style="margin-left:6px" id="cap">破甲</span></div><div class="host" id="root"></div></div>
+<script>
+// ---- 极简 React 垫片：只支持本组件用到的 createElement / useState / useEffect ----
+(function () {
+  var hooks = [];
+  var cursor = 0;
+  var scheduled = null;
+  var currentRender = null;
+
+  function scheduleRender() {
+    if (scheduled) return;
+    scheduled = requestAnimationFrame(function () {
+      scheduled = null;
+      render();
+    });
+  }
+
+  var React = {
+    createElement: function (type, props) {
+      var children = Array.prototype.slice.call(arguments, 2);
+      if (children.length === 1 && Array.isArray(children[0])) children = children[0];
+      var flat = [];
+      (function flatten(list) {
+        list.forEach(function (c) {
+          if (Array.isArray(c)) flatten(c);
+          else if (c !== null && c !== undefined && c !== false && c !== true) flat.push(c);
+        });
+      })(children);
+      return { type: type, props: props || {}, children: flat };
+    },
+    useState: function (initial) {
+      var index = cursor++;
+      if (!(index in hooks)) hooks[index] = { value: typeof initial === "function" ? initial() : initial };
+      var slot = hooks[index];
+      var set = function (next) {
+        var value = typeof next === "function" ? next(slot.value) : next;
+        if (value === slot.value) return;
+        slot.value = value;
+        scheduleRender();
+      };
+      return [slot.value, set];
+    },
+    useEffect: function (fn, deps) {
+      var index = cursor++;
+      var slot = hooks[index] || (hooks[index] = { deps: undefined, cleanup: undefined });
+      var changed = !slot.deps || !deps || deps.length !== slot.deps.length || deps.some(function (d, i) { return d !== slot.deps[i]; });
+      if (changed) {
+        slot.pending = fn;
+        slot.deps = deps;
+      }
+    },
+  };
+
+  var SVG_ATTRS = { viewBox: "viewBox", preserveAspectRatio: "preserveAspectRatio", gradientUnits: "gradientUnits" };
+  function svgAttrName(key) {
+    if (SVG_ATTRS[key]) return SVG_ATTRS[key];
+    return key.replace(/[A-Z]/g, function (m) { return "-" + m.toLowerCase(); });
+  }
+  function applyProps(el, props, isSvg) {
+    Object.keys(props).forEach(function (key) {
+      var value = props[key];
+      if (key === "children" || value === null || value === undefined) return;
+      if (key === "className") el.setAttribute("class", value);
+      else if (key === "style" && typeof value === "object") Object.assign(el.style, value);
+      else if (key === "key" || key === "ref") return;
+      else if (key.slice(0, 2) === "on" && typeof value === "function") el.addEventListener(key.slice(2).toLowerCase(), value);
+      else if (typeof value === "boolean") { if (value) el.setAttribute(isSvg ? svgAttrName(key) : key, ""); }
+      else el.setAttribute(isSvg ? svgAttrName(key) : key, String(value));
+    });
+  }
+
+  function toDom(node) {
+    if (node === null || node === undefined || node === false) return document.createTextNode("");
+    if (typeof node === "string" || typeof node === "number") return document.createTextNode(String(node));
+    if (Array.isArray(node)) {
+      var frag = document.createDocumentFragment();
+      node.forEach(function (child) { frag.appendChild(toDom(child)); });
+      return frag;
+    }
+    if (typeof node.type === "function") {
+      var savedHooks = hooks;
+      var savedCursor = cursor;
+      hooks = []; cursor = 0;
+      var out = node.type(node.props || {});
+      var used = hooks;
+      hooks = savedHooks; cursor = savedCursor;
+      var dom = toDom(out);
+      // 记录该子组件的 hooks 以便卸载/重跑 effect
+      pendingEffects.push(function () {
+        used.forEach(function (slot) {
+          if (slot && slot.pending) {
+            try { if (slot.cleanup) slot.cleanup(); } catch (e) {}
+            slot.cleanup = slot.pending();
+            slot.pending = null;
+          }
+        });
+      });
+      return dom;
+    }
+    var isSvg = node.type === "svg" || node.type === "path" || node.type === "circle" || node.type === "g" || node.type === "rect" || node.type === "line" || node.type === "polyline" || node.type === "polygon";
+    var el = isSvg ? document.createElementNS("http://www.w3.org/2000/svg", node.type) : document.createElement(node.type);
+    applyProps(el, node.props || {}, isSvg);
+    node.children.forEach(function (child) { el.appendChild(toDom(child)); });
+    return el;
+  }
+
+  var pendingEffects = [];
+  var mounted = false;
+  var rootEl = document.getElementById("root");
+  var Component = null;
+  var payload = {};
+
+  function render() {
+    pendingEffects = [];
+    var savedHooks = hooks;
+    var savedCursor = cursor;
+    hooks = rootHooks; cursor = 0;
+    var tree = Component({});
+    rootHooks = hooks;
+    hooks = savedHooks; cursor = savedCursor;
+    rootEl.innerHTML = "";
+    rootEl.appendChild(toDom(tree));
+    // 根组件自身的 effect 也要跑
+    rootHooks.forEach(function (slot) {
+      if (slot && slot.pending) {
+        try { if (slot.cleanup) slot.cleanup(); } catch (e) {}
+        slot.cleanup = slot.pending();
+        slot.pending = null;
+      }
+    });
+    pendingEffects.forEach(function (fn) { fn(); });
+  }
+
+  var rootHooks = [];
+
+  // 用真实后端快照喂给组件
+  window.fetch = function (url, opts) {
+    var live = window.__ARMOR_STATE__ || {};
+    var body = url.indexOf("/state") >= 0 ? live : Object.assign({}, live, window.__ARMOR_NEXT__ || {});
+    return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve(body); } });
+  };
+
+  window.__ModuleLoader__ = {
+    load: function (spec) {
+      var module = { exports: {} };
+      var exports = module.exports;
+      var factory = spec.factory;
+      var requireFn = function (id) {
+        if (id === "react") return React;
+        throw new Error("unknown module " + id);
+      };
+      var built = factory(requireFn) || module.exports;
+      var slots = [];
+      var ctx = {
+        slots: {
+          inject: function (name, fn) { fn(); },
+          register: function (def, comp) { slots.push({ def: def, comp: comp }); return function () {}; },
+        },
+      };
+      built.apply(ctx);
+      Component = slots.filter(function (s) { return s.def.name === "main"; })[0].comp;
+      render();
+      var st = window.__ARMOR_STATE__ || {};
+      document.getElementById("cap").textContent = "解甲 · " + (st.injected ? "已注入" : st.paused ? "已停止" : "未注入");
+    },
+  };
+  window.__ARMOR_BOOT__ = function () {
+    var s = document.createElement("script");
+    s.src = "../lib/client.js";
+    document.body.appendChild(s);
+  };
+})();
+</script>
+<script>window.onerror = function (m, s, l, c, e) { document.title = "ERR " + m + " @" + l; };</script>
+<script>window.__ARMOR_STATE__ = {"ok":true,"build":"b5-mwkrvhdh","allModes":true,"paused":false,"injected":true,"covered":["harness:identity","deployment:persona-prefix","deployment:persona-suffix"],"suppressed":true,"promptChars":8900,"errors":[]};</script>
+<script>window.__ARMOR_BOOT__();</script>
+</body></html>

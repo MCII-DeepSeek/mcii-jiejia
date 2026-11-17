@@ -1,0 +1,39 @@
+{
+  "name": "mcii-jiejia",
+  "version": "1.1.0",
+  "description": "解甲 — DSH 的系统提示接管插件：遮蔽宿主身份/人格段、清空运行时上下文、注入破甲核，单开关界面，默认全模式。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./lib/index.js": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "lib",
+    "prompts",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "id": "mcii-jiejia",
+    "name": "解甲",
+    "version": "1.1.0",
+    "permissions": "系统提示词注入（全模式默认开启）, 侧栏面板",
+    "client": {
+      "platform": "web",
+      "immediately": true
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "manifestVersion": 1
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "icon": "./icon.svg"
+}
