@@ -3,11 +3,12 @@
   "version": "1.1.0",
   "description": "解甲 — DSH 的系统提示接管插件：遮蔽宿主身份/人格段、清空运行时上下文、注入破甲核，单开关界面，默认全模式。",
   "type": "module",
-  "main": "lib/index.js",
+  "main": "lib/entry.js",
   "exports": {
-    ".": "./lib/index.js",
+    ".": "./lib/entry.js",
     "./client": "./lib/client.js",
     "./lib/index.js": "./lib/index.js",
+    "./lib/entry.js": "./lib/entry.js",
     "./package.json": "./package.json",
     "./icon": "./icon.svg"
   },
