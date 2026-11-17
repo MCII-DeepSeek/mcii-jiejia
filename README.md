@@ -14,7 +14,7 @@ DSH（DeepSeek Harness）的系统提示接管插件。装上即生效，**默�
 | 步骤 | 效果 |
 | --- | --- |
 | 遮蔽宿主段落 | `harness:identity` / `deployment:persona-prefix` / `deployment:persona-suffix` 全部置空 |
-| 插入三段 | `jiejia:head`(order 0) / `jiejia:core`(order 100) / `jiejia:tail`(order 10200) |
+| 写入一段 | `jiejia:prompt`(order 100) —— 前缀 + 核心 + 封印在运行时拼成一段 10406 字，不拆成多段 |
 | 清空运行时上下文 | `systemPrompt.suppressRuntimeContext()` |
 
 再加一层 `system-prompt/assemble` 钩子：装配前重新覆盖、装配后把宿主段落再抹一遍，防止别的插件在你的段落后面补回身份。
