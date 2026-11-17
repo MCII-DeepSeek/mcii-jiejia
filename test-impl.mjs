@@ -48,8 +48,8 @@ function describe(ctx) {
     personaS: JSON.stringify(get("deployment:persona-suffix")?.text ?? null),
     core: Boolean(get("jiejia:core")),
     coreLen: (get("jiejia:core")?.text || "").length,
-    prefix: Boolean(get("jiejia:persona-prefix")),
-    seal: Boolean(get("jiejia:persona-suffix")),
+    prefix: Boolean(get("jiejia:head")),
+    seal: Boolean(get("jiejia:tail")),
     suppressed,
     toolRead: (get("tool:read")?.text || "").slice(0, 4),
   };
