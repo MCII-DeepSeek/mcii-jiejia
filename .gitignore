@@ -1,6 +1,4 @@
 node_modules/
 *.log
-preview/client-served.js
-preview/icon.html
-preview/icon.png
+preview/
 .DS_Store

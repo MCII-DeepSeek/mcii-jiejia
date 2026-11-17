@@ -35,7 +35,9 @@ function makeCtx() {
   return ctx;
 }
 
-const impl = await import("file:///D:/work/dsh-armor-one/lib/impl.js?t=" + Date.now());
+const implUrl = new URL("./lib/impl.js", import.meta.url);
+implUrl.search = "?t=" + Date.now();
+const impl = await import(implUrl.href);
 
 function describe(ctx) {
   const { sections, suppressed } = ctx.read();
