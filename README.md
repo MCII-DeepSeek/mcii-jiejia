@@ -24,13 +24,13 @@ DSH（DeepSeek Harness）的系统提示接管插件。装上即生效，**默�
 插件管理器里 **添加插件**，粘贴：
 
 ```
-github:MCII-DeepSeek/mcii-jiejia
+git+https://github.com/MCII-DeepSeek/mcii-jiejia.git
 ```
 
 或者命令行：
 
 ```bash
-dsh plugin --profile desktop add github:MCII-DeepSeek/mcii-jiejia
+dsh plugin --profile desktop add git+https://github.com/MCII-DeepSeek/mcii-jiejia.git
 ```
 
 装完重启客户端（首次安装要重启，之后改配置不用）。侧栏出现「解甲」面板即成功。
